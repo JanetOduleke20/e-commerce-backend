@@ -2,7 +2,7 @@
     <form method="POST" action="/admin/register">
         @csrf
 
-        <div>Admin Login</div>
+        <div class=" fw-bold text-center">Admin Registration</div>
         <!-- Name -->
         <div>
             <x-input-label for="name" :value="__('Name')" />

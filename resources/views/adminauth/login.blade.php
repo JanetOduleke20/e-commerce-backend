@@ -2,8 +2,9 @@
     <!-- Session Status -->
     <x-auth-session-status class="mb-4" :status="session('status')" />
 
-    <form method="POST" action="/login">
+    <form method="POST" action="/admin/login">
         @csrf
+        <div class="text-center">Admin Login</div>
 
         <!-- Email Address -->
         <div>
