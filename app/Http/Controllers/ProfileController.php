@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Models\Admin;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\View\View;
 
 class ProfileController extends Controller
@@ -16,25 +18,52 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): View
     {
-        return view('profile.edit', [
-            'user' => $request->user(),
-        ]);
+        if ($request->is('admin/*')) {
+            return view('profile.edit', [
+                'user' => auth()->guard('admin')->user()
+            ]);
+        } else {
+            return view('profile.edit', [
+                'user' => $request->user(),
+            ]);
+        }
+        
     }
 
     /**
      * Update the user's profile information.
      */
-    public function update(ProfileUpdateRequest $request): RedirectResponse
-    {
-        $request->user()->fill($request->validated());
+    public function updateAdmin(Request $request)  {
+        $validate = Validator::make($request->all(), [
+            'name' => ['required', 'max: 255'],
+            'email' => ['required', 'lowercase', 'email', 'unique:'.Admin::class]
+        ]);
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
+        $authenticatedAdmin = Auth::guard('admin')->user();
+       
+        $update = Admin::where('id', $authenticatedAdmin->id)->update([
+            'name' => $request->name,
+            'email' => $request->email
+        ]);
+        if ($update) {
+            return Redirect::route('admin.profile.edit')->with('status', 'profile-updated');
+        } else {
+            return Redirect::route('admin.profile.edit')->with('error', 'error-occurred');
         }
+        
+    }
 
-        $request->user()->save();
-
-        return Redirect::route('profile.edit')->with('status', 'profile-updated');
+    
+    public function update( ProfileUpdateRequest $request) : RedirectResponse
+    {
+            $request->user()->fill($request->validated());
+    
+            if ($request->user()->isDirty('email')) {
+                $request->user()->email_verified_at = null;
+            }
+    
+            $request->user()->save();
+            return Redirect::route('profile.edit')->with('status', 'profile-updated');
     }
 
     /**

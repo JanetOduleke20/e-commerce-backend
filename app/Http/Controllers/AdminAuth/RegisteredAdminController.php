@@ -9,6 +9,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules;
 use Illuminate\View\View;
 
@@ -27,26 +28,38 @@ class RegisteredAdminController extends Controller
      *
      * @throws \Illuminate\Validation\ValidationException
      */
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request)
     {
-        $request->validate([
+        $Validator = Validator::make($request->all(), [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.Admin::class],
             'role' => ['required', 'string'],
             'password' => ['required', Rules\Password::defaults()],
         ]);
-
-        $admin = Admin::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'role' => $request->role,
-            'password' => Hash::make($request->password),
-        ]);
-
-        event(new Registered($admin));
-
-        Auth::login($admin);
-
-        return redirect(route('dashboard', absolute: false));
+        if ($Validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'errors' => $Validator->errors()
+            ]);
+        } else {
+            $admin = Admin::create([
+                'name' => $request->name,
+                'email' => $request->email,
+                'role' => $request->role,
+                'password' => Hash::make($request->password),
+            ]);
+    
+            return response()->json([
+                'status' => true
+            ]);
+            // event(new Registered($admin));
+    
+            // Auth::login($admin);
+    
+            // return redirect(route('dashboard', absolute: false));
+            
+        }
+        
+        
     }
 }
